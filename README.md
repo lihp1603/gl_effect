@@ -1,0 +1,2 @@
+# gl_effect
+主要是使用ffmpeg和opengl实现实现一些video effect.而最初的目的主要是用于调试gl_transiton项目中的一些opengl效果而开发的一个demo
