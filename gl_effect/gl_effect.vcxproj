@@ -25,6 +25,7 @@
     <ClCompile Include="..\src\render.cpp" />
     <ClCompile Include="..\src\shader.cpp" />
     <ClCompile Include="..\src\stdafx.cpp" />
+    <ClCompile Include="..\src\transitionRender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\contex.h" />
@@ -43,6 +44,7 @@
     <ClInclude Include="..\src\global.h" />
     <ClInclude Include="..\src\stdafx.h" />
     <ClInclude Include="..\src\targetver.h" />
+    <ClInclude Include="..\src\transitionRender.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\transitions\GlitchDisplace.glsl" />

@@ -12,7 +12,6 @@
 #include <iostream>
 
 
-#define PIXEL_FORMAT (GL_BGR)
 //这里在一个gl中标准化的设备坐标中定义需要绘制的画布的顶点坐标值
 //2d
 static const float vertex_position[12] = {
@@ -23,7 +22,6 @@ static const float vertex_position[12] = {
 	1.0f, -1.0f, 
 	1.0f, 1.0f
 };
-
 //厉害的方法，一般我们做纹理贴图的时候，会将纹理贴图的坐标像顶点坐标一样，从cpu传入到gpu
 //大家都知道,这种传输是效率比较低的方法
 //这里,作者用了一种从顶点坐标转化的方法来实现纹理贴图坐标，从而提升效率
@@ -39,7 +37,7 @@ static const float vertex_position[12] = {
 //所以在播放器的是，我们只需要取一次1.0-y就可以解决翻转的问题
 //参考https://blog.csdn.net/narutojzm1/article/details/51940817
 
-static const GLchar *v_shader_source =
+static const GLchar *v_shader_template_default =
 	"#version 330 core\n"
 	"attribute vec2 position;\n"
 	"varying vec2 _uv;\n"
@@ -49,40 +47,26 @@ static const GLchar *v_shader_source =
 	"  _uv = vec2(uv.x, 1.0 - uv.y);\n"
 	"}\n";
 
-static const GLchar *f_shader_template =
+static const GLchar *f_shader_template_default =
 	"#version 330 core\n"
 	"varying vec2 _uv;\n"
 	"uniform sampler2D from;\n"
-	"uniform sampler2D to;\n"
 	"uniform float progress;\n"
 	"uniform float ratio;\n"
 	"uniform float _fromR;\n"
-	"uniform float _toR;\n"
 	"\n"
 	"vec4 getFromColor(vec2 uv) {\n"
 	"  return texture2D(from, vec2(uv.x, uv.y));\n"
 	"}\n"
 	"\n"
-	"vec4 getToColor(vec2 uv) {\n"
-	"  return texture2D(to, vec2(uv.x, uv.y));\n"
-	"}\n"
-	"\n"
 	"\n%s\n"
 	"void main() {\n"
-	"  gl_FragColor = transition(_uv);\n"
+	"  gl_FragColor = effect(_uv);\n"
 	"}\n";
 
-
-//GLSL中mix函数genType mix (genType x, genType y, genType a)是线性插值的实现方法,
-//它返回线性混合的x和y，如：x*(1-a)+y*a
-// default to a basic fade effect
-static const GLchar *f_default_transition_source =
-	"vec4 transition (vec2 uv) {\n"
-	"  return mix(\n"
-	"    getFromColor(uv),\n"
-	"    getToColor(uv),\n"
-	"    progress\n"
-	"  );\n"
+static const GLchar *f_default_effect_source =
+	"vec4 effect (vec2 uv) {\n"
+	"  return getFromColor(uv);\n"
 	"}\n";
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -148,32 +132,27 @@ int32_t CRender::CreateEnvGL( int window_width,int window_height )
 	return 0;
 }
 
-int32_t CRender::CreateTransShader( const char* transPath )
+int32_t CRender::CreateShader( const char* v_shader_source,const char* f_shader_source )
 {
+	if (v_shader_source==NULL||f_shader_source==NULL)
+	{
+		std::cout<<"vertex source or fragment source is null"<<std::endl;
+		return -1;
+	}
 	GLuint v_shader, f_shader;
 	Shader *pShaderCtx=new Shader();
 	assert(pShaderCtx);
+	std::cout<<"vertex shader source:\n"<<v_shader_source<<std::endl;
 	if (!(v_shader=pShaderCtx->BuildShader(v_shader_source,GL_VERTEX_SHADER)))
 	{
 		return -1;
 	}
-	std::string strFragmentSource(f_shader_template);
-	std::string strTransSource;
-	if (transPath)
-	{
-		strTransSource=pShaderCtx->ReadShaderFile(transPath);
-	}
-	if (strTransSource.empty())
-	{
-		strTransSource.append(f_default_transition_source);
-	}
-	//strFragmentSource.append(strTransSource);
-	strFragmentSource.replace(strFragmentSource.find("%s"),2,strTransSource.c_str(),strTransSource.length());
-	std::cout<<strFragmentSource<<std::endl;
-	if (!(f_shader=pShaderCtx->BuildShader(strFragmentSource.c_str(),GL_FRAGMENT_SHADER)))
+	std::cout<<"fragment shader source:\n"<<f_shader_source<<std::endl;
+	if (!(f_shader=pShaderCtx->BuildShader(f_shader_source,GL_FRAGMENT_SHADER)))
 	{
 		return -1;
 	}
+
 	if (!pShaderCtx->BuildProgram(v_shader,f_shader))
 	{
 		return -1;
@@ -184,27 +163,32 @@ int32_t CRender::CreateTransShader( const char* transPath )
 	return 0;
 }
 
-void CRender::CreateTransVAO()
+void CRender::CreateVAO(const float vertexPostion[],int32_t arrySize)
 {
 	glGenVertexArrays(1, &m_uVAO);
 	glGenBuffers(1, &m_uVBO);
 
 	glBindVertexArray(m_uVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, m_uVBO);
-
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position), vertex_position, GL_STATIC_DRAW);
+	if (arrySize==0)
+	{
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_position), vertex_position, GL_STATIC_DRAW);
+	}
+	else
+		glBufferData(GL_ARRAY_BUFFER, arrySize, vertexPostion, GL_STATIC_DRAW);
+	
 	//设置顶点属性指针
 	GLint loc = glGetAttribLocation(m_pShaderCtx->GetProgramId(), "position");
 	glEnableVertexAttribArray(loc);
 	glVertexAttribPointer(loc, 2, GL_FLOAT, GL_FALSE, 0, 0);
 }
 
-void CRender::CreateTransTexture(uint32_t width,uint32_t height)
+uint32_t CRender::CreateTexture(uint32_t width,uint32_t height,PixFormat_E ePixFmt/*=PF_RGB24*/)
 {
-	{ // from
-		glGenTextures(1, &m_uFromTexture);
+	{ // main
+		glGenTextures(1, &m_uMainTexture);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, m_uFromTexture);
+		glBindTexture(GL_TEXTURE_2D, m_uMainTexture);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -215,23 +199,9 @@ void CRender::CreateTransTexture(uint32_t width,uint32_t height)
 
 		glUniform1i(glGetUniformLocation(m_pShaderCtx->GetProgramId(), "from"), 0);
 	}
-
-	{ // to
-		glGenTextures(1, &m_uToTexture);
-		glActiveTexture(GL_TEXTURE0 + 1);
-		glBindTexture(GL_TEXTURE_2D, m_uToTexture);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, PIXEL_FORMAT, GL_UNSIGNED_BYTE, NULL);
-
-		glUniform1i(glGetUniformLocation(m_pShaderCtx->GetProgramId(), "to"), 1);
-	}
 	m_uVideoWidth=width;
 	m_uVideoHeight=height;
+	return m_uMainTexture;
 }
 
 void CRender::InitUniforms()
@@ -246,35 +216,18 @@ void CRender::InitUniforms()
 
 	m_uFromRLoc=glGetUniformLocation(programId, "_fromR");
 	glUniform1f(m_uFromRLoc, (float)m_uVideoWidth / m_uVideoHeight);
-
-	// TODO: initialize this in config_props for "to" input
-	m_uToRLoc=glGetUniformLocation(programId, "_toR");
-	glUniform1f(m_uToRLoc, (float)m_uVideoWidth / m_uVideoHeight);
 }
 
-void CRender::Render(MediaFrameInfo_S *fromFrame,const MediaFrameInfo_S *toFrame,const float fProgress)
+void CRender::Render(MediaFrameInfo_S *mainFrame)
 {
 	glfwMakeContextCurrent(m_pWindow);
 	uint32_t programId=m_pShaderCtx->GetProgramId();
 	glUseProgram(programId);
-	//if (m_lFirstPts==-1)
-	//{
-	//	m_lFirstPts=fromFrame->lPts;
-	//}
-	//float fps_time=1.0/fromFrame->fFps;
-	//const float ts = ((fromFrame->lPts - m_lFirstPts) / fps_time) - m_uTransOffset;
-	//const float progress = FFMAX(0.0f, FFMIN(1.0f, ts / m_uTransDuration));
-	////progress的计算值:ts<0,progress=0;ts>1,progress=1;0<ts<1,progress=ts;
-	// av_log(ctx, AV_LOG_ERROR, "transition '%s' %llu %f %f\n", c->source, fs->pts - c->first_pts, ts, progress);
-	glUniform1f(m_uProgressLoc, fProgress);
-
+	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_uFromTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, fromFrame->nWidth, fromFrame->nHeight, 0, PIXEL_FORMAT, GL_UNSIGNED_BYTE, fromFrame->pFrame);
+	glBindTexture(GL_TEXTURE_2D, m_uMainTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mainFrame->nWidth, mainFrame->nHeight, 0, PIXEL_FORMAT, GL_UNSIGNED_BYTE, mainFrame->pFrame);
 
-	glActiveTexture(GL_TEXTURE0 + 1);
-	glBindTexture(GL_TEXTURE_2D, m_uToTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, toFrame->nWidth, toFrame->nHeight, 0, PIXEL_FORMAT, GL_UNSIGNED_BYTE, toFrame->pFrame);
 	//渲染
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glfwSwapBuffers(m_pWindow);
@@ -285,18 +238,14 @@ CRender::CRender()
 	,m_pShaderCtx(NULL)
 	,m_uVBO(0)
 	,m_uVAO(0)
-	,m_uFromTexture(0)
-	,m_uToTexture(0)
+	,m_uMainTexture(0)
 	,m_uWindowWidth(0)
 	,m_uWindowHeight(0)
 	,m_uVideoWidth(0)
 	,m_uVideoHeight(0)
 	,m_uProgressLoc(0)
 	,m_uRatioLoc(0)
-	,m_uToRLoc(0)
-	,m_lFirstPts(-1)
-	,m_uTransOffset(1)
-	,m_uTransDuration(1)
+	,m_uFromRLoc(0)
 {
 
 }
@@ -304,8 +253,7 @@ CRender::CRender()
 CRender::~CRender()
 {
 	if (m_pWindow) {
-		glDeleteTextures(1, &m_uFromTexture);
-		glDeleteTextures(1, &m_uToTexture);
+		glDeleteTextures(1, &m_uMainTexture);
 		glDeleteVertexArrays(1,&m_uVAO);
 		glDeleteBuffers(1, &m_uVBO);
 		if (m_pShaderCtx)
@@ -317,26 +265,47 @@ CRender::~CRender()
 	}
 }
 
-int32_t CRender::SetupGL( uint32_t window_width,uint32_t window_height,uint32_t video_width,uint32_t video_height,const char* transPath )
+int32_t CRender::SetupGL( uint32_t window_width,uint32_t window_height,uint32_t video_width,uint32_t video_height,const char* effectPath )
 {
 	if (CreateEnvGL(window_width,window_height)<0)
 	{
 		return -1;
 	}
 
-	if (CreateTransShader(transPath)<0)
+	if (LoadShader(v_shader_template_default,f_shader_template_default,effectPath)<0)
 	{
 		return -1;
 	}
 
-	CreateTransVAO();
+	CreateVAO();
 	InitUniforms();
-	CreateTransTexture(video_width,video_width);
-
+	CreateTexture(video_width,video_width);
 	return 0;
 }
 
+int32_t CRender::LoadShader(const char* v_shader_source,const char* f_shader_source,const char* effectPath )
+{
+	std::string strFragmentSource(f_shader_source);
+	std::string strEffectSource;
+	if (effectPath)
+	{
+		strEffectSource=m_pShaderCtx->ReadShaderFile(effectPath);
+	}
+	if (strEffectSource.empty())
+	{
+		strEffectSource.append(f_default_effect_source);
+	}
+	//strFragmentSource.append(strTransSource);
+	strFragmentSource.replace(strFragmentSource.find("%s"),2,strEffectSource.c_str(),strEffectSource.length());
 
+	//创建
+	return CreateShader(v_shader_source,strFragmentSource.c_str());
+}
+
+Shader* CRender::GetShader()
+{
+	return m_pShaderCtx;
+}
 
 
 

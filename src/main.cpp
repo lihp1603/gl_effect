@@ -8,6 +8,7 @@
 #include <iostream>
 #include "render.h"
 #include <string.h>
+#include "transitionRender.h"
 
 #define FRAME_TIME_BASE            1000000
 
@@ -40,7 +41,8 @@ int32_t BackupFrame(MediaFrameInfo_S &srcFrame,MediaFrameInfo_S &bkFrame){
 	return -1;
 }
 
-int main(){
+//转场
+int32_t TrainsitionDemo(){
 	int64_t firstPts=-1;
 	//transition
 	uint32_t transOffset=1;
@@ -55,16 +57,16 @@ int main(){
 	if (pMainDecCtx->OpenFile(main_file)<0)
 	{
 		std::cout<<"open main file failed:"<<main_file<<std::endl;
-		return 0;
+		return -1;
 	}
 	const char* second_file="F:\\test_file\\fengjing\\t4.mp4";
 	if (pSecDecCtx->OpenFile(second_file)<0)
 	{
 		std::cout<<"open second file failed:"<<second_file<<std::endl;
-		return 0;
+		return -1;
 	}
 	bool init=false;
-	CRender* pRenderObj=new CRender();
+	CRenderTransition* pRenderObj=new CRenderTransition();
 	assert(pRenderObj);
 	MediaFrameInfo_S mainFrame;
 	MediaFrameInfo_S mainBkFrame;//备份一帧main的解码数据
@@ -97,12 +99,12 @@ int main(){
 		}
 		std::cout<<"fps:"<<mainBkFrame.fFps<<std::endl;
 	}
-	
+
 	if (firstPts==-1)
 	{
 		firstPts=mainBkFrame.lPts;
 	}
-	
+
 	int32_t second_ret=0;
 	int32_t main_ret=0;
 	while (second_ret==0)
@@ -132,6 +134,14 @@ int main(){
 			}
 		}
 	}
+	return 0;
+}
+
+
+
+int main(){
+	
+	TrainsitionDemo();
 	system("pause");
 	return 0;
 }
