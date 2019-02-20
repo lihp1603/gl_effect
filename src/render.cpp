@@ -78,6 +78,40 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
+
+CRender::CRender()
+	:m_pWindow(NULL)
+	,m_pShaderCtx(NULL)
+	,m_uVBO(0)
+	,m_uVAO(0)
+	,m_uMainTexture(0)
+	,m_uWindowWidth(0)
+	,m_uWindowHeight(0)
+	,m_uVideoWidth(0)
+	,m_uVideoHeight(0)
+	,m_uProgressLoc(0)
+	,m_uRatioLoc(0)
+	,m_uFromRLoc(0)
+{
+
+}
+
+CRender::~CRender()
+{
+	if (m_pWindow) {
+		glDeleteTextures(1, &m_uMainTexture);
+		glDeleteVertexArrays(1,&m_uVAO);
+		glDeleteBuffers(1, &m_uVBO);
+		if (m_pShaderCtx)
+		{
+			delete m_pShaderCtx;
+			m_pShaderCtx=NULL;
+		}
+		glfwDestroyWindow(m_pWindow);
+	}
+}
+
+
 int32_t CRender::CreateEnvGL( int window_width,int window_height )
 {
 	try
@@ -233,37 +267,6 @@ void CRender::Render(MediaFrameInfo_S *mainFrame)
 	glfwSwapBuffers(m_pWindow);
 }
 
-CRender::CRender()
-	:m_pWindow(NULL)
-	,m_pShaderCtx(NULL)
-	,m_uVBO(0)
-	,m_uVAO(0)
-	,m_uMainTexture(0)
-	,m_uWindowWidth(0)
-	,m_uWindowHeight(0)
-	,m_uVideoWidth(0)
-	,m_uVideoHeight(0)
-	,m_uProgressLoc(0)
-	,m_uRatioLoc(0)
-	,m_uFromRLoc(0)
-{
-
-}
-
-CRender::~CRender()
-{
-	if (m_pWindow) {
-		glDeleteTextures(1, &m_uMainTexture);
-		glDeleteVertexArrays(1,&m_uVAO);
-		glDeleteBuffers(1, &m_uVBO);
-		if (m_pShaderCtx)
-		{
-			delete m_pShaderCtx;
-			m_pShaderCtx=NULL;
-		}
-		glfwDestroyWindow(m_pWindow);
-	}
-}
 
 int32_t CRender::SetupGL( uint32_t window_width,uint32_t window_height,uint32_t video_width,uint32_t video_height,const char* effectPath )
 {
@@ -305,6 +308,12 @@ int32_t CRender::LoadShader(const char* v_shader_source,const char* f_shader_sou
 Shader* CRender::GetShader()
 {
 	return m_pShaderCtx;
+}
+
+float CRender::GetTime()
+{
+	float currentTime = glfwGetTime();
+	return currentTime;
 }
 
 

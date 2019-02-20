@@ -39,7 +39,8 @@ public:
 	int32_t LoadShader(const char* v_shader_source,const char* f_shader_source,const char* effectPath=NULL);
 	//获取shader上下文
 	Shader* GetShader();
-
+	//获取时间
+	float GetTime();
 protected:
 	GLFWwindow* m_pWindow;
 	Shader* m_pShaderCtx;
