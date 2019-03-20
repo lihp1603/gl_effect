@@ -24,7 +24,7 @@ namespace PublicTool {
     #ifdef __WIN32__
 
     //调试级别的日志信息打印
-#define LogTraceD(format, ...) LogTrace(LogTrace_FATAL,format,##__VA_ARGS__)
+#define LogTraceD(format, ...) LogTrace(LogTrace_WARNING,format,##__VA_ARGS__)
     //一般信息日志打印
 #define LogTraceI(format, ...) LogTrace(LogTrace_INFO,format,##__VA_ARGS__)
     //警告级别的日志信息打印

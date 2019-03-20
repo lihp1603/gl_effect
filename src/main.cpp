@@ -9,6 +9,7 @@
 #include "render.h"
 #include <string.h>
 #include "transitionRender.h"
+#include "imageHelper.h"
 
 #define FRAME_TIME_BASE            1000000
 
@@ -97,6 +98,7 @@ int32_t TrainsitionDemo(){
 			std::cout<<"setup GL failed"<<std::endl;
 			return -1;
 		}
+		pRenderObj->CreateTexture(mainBkFrame.nWidth,mainBkFrame.nHeight);
 		std::cout<<"fps:"<<mainBkFrame.fFps<<std::endl;
 	}
 
@@ -139,7 +141,7 @@ int32_t TrainsitionDemo(){
 
 
 //单个effect
-int32_t EffectDemo(){
+int32_t VideoEffectDemo(){
 	int64_t firstPts=-1;
 	//transition
 	uint32_t transOffset=1;
@@ -175,6 +177,9 @@ int32_t EffectDemo(){
 			std::cout<<"setup GL failed"<<std::endl;
 			return -1;
 		}
+		//创建纹理对象
+		pRenderObj->CreateTexture(mainBkFrame.nWidth,mainBkFrame.nHeight);
+
 		std::cout<<"fps:"<<mainBkFrame.fFps<<std::endl;
 		pRenderObj->GetShader()->setVec2("resolution",mainBkFrame.nWidth/4,mainBkFrame.nHeight/4);
 	}
@@ -207,10 +212,61 @@ int32_t EffectDemo(){
 	return 0;
 }
 
+//图片
+int32_t ImageEffectDemo(){
+	int64_t firstPts=-1;
+
+	const char* main_file="F:\\test_file\\text_template\\213123213_00088\\1.png";
+	ImageHelper* pMainImage= new ImageHelper(main_file,PF_RGB32);
+	assert(pMainImage);
+
+	bool init=false;
+	CRender* pRenderObj=new CRender();
+	assert(pRenderObj);
+	MediaFrameInfo_S mainFrame;
+	memset(&mainFrame,0,sizeof(MediaFrameInfo_S));
+	float time=pRenderObj->GetTime();
+	if (!init)
+	{
+		if (pMainImage->GetFrame(&mainFrame)<0)
+		{
+			std::cout<<"main get frame failed"<<std::endl;
+			return -1;
+		}
+		//const char* pEffectPath = NULL;
+		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
+		const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\image_alpha.glsl";
+		if (pRenderObj->SetupGL(mainFrame.nWidth/4,mainFrame.nHeight/4,mainFrame.nWidth,mainFrame.nHeight,pEffectPath)<0)
+		{
+			std::cout<<"setup GL failed"<<std::endl;
+			return -1;
+		}
+		//创建纹理对象
+		pRenderObj->CreateTexture(mainFrame.nWidth,mainFrame.nHeight);
+
+		pRenderObj->GetShader()->setVec2("resolution",mainFrame.nWidth/4,mainFrame.nHeight/4);
+	}
+	int32_t main_ret=0;
+	while (main_ret>=0)
+	{
+		time=pRenderObj->GetTime();
+		std::cout<<"time:"<<time<<std::endl;
+		pRenderObj->GetShader()->setFloat("time",time);
+
+		pRenderObj->Render(&mainFrame);
+		Sleep(100);
+		main_ret=pMainImage->GetFrame(&mainFrame);
+	}
+	return 0;
+}
+
+//提取rgba中alpha通道上的颜色值
+
 int main(){
 	
 	//TrainsitionDemo();
-	EffectDemo();
+	//VideoEffectDemo();
+	ImageEffectDemo();
 	system("pause");
 	return 0;
 }

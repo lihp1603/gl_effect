@@ -66,6 +66,12 @@
     <ClCompile Include="..\src\transitionRender.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\includes\stb_image.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\imageHelper.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\src\contex.h">
@@ -119,9 +125,15 @@
     <ClInclude Include="..\src\transitionRender.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\imageHelper.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\src\transitions\GlitchDisplace.glsl">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="..\src\effect\circle.glsl">
       <Filter>资源文件</Filter>
     </None>
   </ItemGroup>

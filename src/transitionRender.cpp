@@ -169,7 +169,7 @@ int32_t CRenderTransition::SetupGL( uint32_t window_width,uint32_t window_height
 	{
 		return -1;
 	}
-
+	ConfigGlobalState();
 	if (LoadShader(v_shader_template_transition,f_shader_template_transition,shaderPath)<0)
 	{
 		return -1;
@@ -178,7 +178,7 @@ int32_t CRenderTransition::SetupGL( uint32_t window_width,uint32_t window_height
 	CreateVAO();
 	InitUniforms();
 	//´´½¨ÎÆÀí
-	CreateTransTexture(video_width,video_width);
+	//CreateTransTexture(video_width,video_width);
 	return 0;
 }
 

@@ -23,7 +23,8 @@ typedef enum {
     PF_YVYU, /**< Packed mode: Y0+V0+Y1+U0 (1 plane) */
     PF_RGB24,
     PF_BGR24,
-    PF_RGB32
+    PF_RGB32,  /* ARGB,BGRA*/
+	PF_RGBA    /*packed RGBA 8:8:8:8, 32bpp, RGBARGBA...*/
 }PixFormat_E;
 
 //音频采样格式

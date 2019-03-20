@@ -34,13 +34,15 @@ public:
 	//初始化uniforms变量的值
 	virtual void InitUniforms();
 	//渲染
-	void Render(MediaFrameInfo_S *mainFrame);
+	void Render(MediaFrameInfo_S *mainFrame,bool update =true);
 	//根据effect文件名来加载shader内容
 	int32_t LoadShader(const char* v_shader_source,const char* f_shader_source,const char* effectPath=NULL);
 	//获取shader上下文
 	Shader* GetShader();
 	//获取时间
 	float GetTime();
+	//配置全局的opengl state,例如blend
+	virtual void ConfigGlobalState();
 protected:
 	GLFWwindow* m_pWindow;
 	Shader* m_pShaderCtx;

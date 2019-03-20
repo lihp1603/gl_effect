@@ -64,6 +64,7 @@ static const GLchar *f_shader_template_default =
 	"  gl_FragColor = effect(_uv);\n"
 	"}\n";
 
+
 static const GLchar *f_default_effect_source =
 	"vec4 effect (vec2 uv) {\n"
 	"  return getFromColor(uv);\n"
@@ -229,7 +230,12 @@ uint32_t CRender::CreateTexture(uint32_t width,uint32_t height,PixFormat_E ePixF
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, PIXEL_FORMAT, GL_UNSIGNED_BYTE, NULL);
+		if (PF_RGB32==ePixFmt||PF_RGBA==ePixFmt)
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+		}else{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, PIXEL_FORMAT, GL_UNSIGNED_BYTE, NULL);
+		}
 
 		glUniform1i(glGetUniformLocation(m_pShaderCtx->GetProgramId(), "from"), 0);
 	}
@@ -252,15 +258,26 @@ void CRender::InitUniforms()
 	glUniform1f(m_uFromRLoc, (float)m_uVideoWidth / m_uVideoHeight);
 }
 
-void CRender::Render(MediaFrameInfo_S *mainFrame)
+void CRender::Render(MediaFrameInfo_S *mainFrame,bool update /*=true*/)
 {
 	glfwMakeContextCurrent(m_pWindow);
 	uint32_t programId=m_pShaderCtx->GetProgramId();
 	glUseProgram(programId);
-	
+
+	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_uMainTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mainFrame->nWidth, mainFrame->nHeight, 0, PIXEL_FORMAT, GL_UNSIGNED_BYTE, mainFrame->pFrame);
+	if (update)
+	{
+		if (mainFrame&&(PF_RGB32==mainFrame->ePixFmt||PF_RGBA==mainFrame->ePixFmt))
+		{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, mainFrame->nWidth, mainFrame->nHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, mainFrame->pFrame);
+		}else{
+			glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, mainFrame->nWidth, mainFrame->nHeight, 0, PIXEL_FORMAT, GL_UNSIGNED_BYTE, mainFrame->pFrame);
+		}
+	}
 
 	//‰÷»æ
 	glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -274,7 +291,7 @@ int32_t CRender::SetupGL( uint32_t window_width,uint32_t window_height,uint32_t 
 	{
 		return -1;
 	}
-
+	ConfigGlobalState();
 	if (LoadShader(v_shader_template_default,f_shader_template_default,effectPath)<0)
 	{
 		return -1;
@@ -282,7 +299,7 @@ int32_t CRender::SetupGL( uint32_t window_width,uint32_t window_height,uint32_t 
 
 	CreateVAO();
 	InitUniforms();
-	CreateTexture(video_width,video_width);
+	//CreateTexture(video_width,video_width);
 	return 0;
 }
 
@@ -314,6 +331,12 @@ float CRender::GetTime()
 {
 	float currentTime = glfwGetTime();
 	return currentTime;
+}
+
+void CRender::ConfigGlobalState()
+{
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
 
