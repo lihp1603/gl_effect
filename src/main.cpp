@@ -92,13 +92,14 @@ int32_t TrainsitionDemo(){
 		}
 		BackupFrame(mainFrame,mainBkFrame);
 		BackupFrame(secondFrame,secondBkFrame);
-		const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\GlitchDisplace.glsl";
+		/*const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\GlitchDisplace.glsl";*/
+		const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\angular.glsl";
 		if (pRenderObj->SetupGL(mainBkFrame.nWidth/4,mainBkFrame.nHeight/4,mainBkFrame.nWidth,mainBkFrame.nHeight,pTransitionPath)<0)
 		{
 			std::cout<<"setup GL failed"<<std::endl;
 			return -1;
 		}
-		pRenderObj->CreateTexture(mainBkFrame.nWidth,mainBkFrame.nHeight);
+		pRenderObj->CreateTransTexture(mainBkFrame.nWidth,mainBkFrame.nHeight);
 		std::cout<<"fps:"<<mainBkFrame.fFps<<std::endl;
 	}
 
@@ -235,7 +236,9 @@ int32_t ImageEffectDemo(){
 		}
 		//const char* pEffectPath = NULL;
 		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
-		const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\image_alpha.glsl";
+		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\image_alpha.glsl";
+		const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\brightness.glsl";
+
 		if (pRenderObj->SetupGL(mainFrame.nWidth/4,mainFrame.nHeight/4,mainFrame.nWidth,mainFrame.nHeight,pEffectPath)<0)
 		{
 			std::cout<<"setup GL failed"<<std::endl;
@@ -245,28 +248,58 @@ int32_t ImageEffectDemo(){
 		pRenderObj->CreateTexture(mainFrame.nWidth,mainFrame.nHeight);
 
 		pRenderObj->GetShader()->setVec2("resolution",mainFrame.nWidth/4,mainFrame.nHeight/4);
+		pRenderObj->GetShader()->setFloat("brightness",0);
 	}
+	Sleep(5*1000);
 	int32_t main_ret=0;
+	float brightness_factor=-1;
 	while (main_ret>=0)
 	{
 		time=pRenderObj->GetTime();
 		std::cout<<"time:"<<time<<std::endl;
 		pRenderObj->GetShader()->setFloat("time",time);
+		brightness_factor+=0.05;
+		pRenderObj->GetShader()->setFloat("brightness",brightness_factor);
 
 		pRenderObj->Render(&mainFrame);
-		Sleep(100);
+		Sleep(1*1000);
 		main_ret=pMainImage->GetFrame(&mainFrame);
 	}
 	return 0;
 }
 
-//提取rgba中alpha通道上的颜色值
+//提取rgba中alpha通道上的颜色值，然后回去alpha包围的区域矩形
+void GetAlphaRect(){
+	const char* main_file="F:\\test_file\\text_template\\213123213_00088\\1.png";
+	ImageHelper* pMainImage= new ImageHelper(main_file,PF_RGB32);
+	assert(pMainImage);
+	MediaFrameInfo_S mainFrame;
+	memset(&mainFrame,0,sizeof(MediaFrameInfo_S));
+	if (pMainImage->GetFrame(&mainFrame)<0)
+	{
+		std::cout<<"main get frame failed"<<std::endl;
+		return;
+	}
+	for (int y = 0; y <= mainFrame.nHeight -1; y++) 
+	{ 
+		for (int x = 0; x <= mainFrame.nWidth -1; x++) 
+		{ 
+			//获取alpha的值
+			uint8_t a=mainFrame.pFrame[y*mainFrame.nWidth*4+x+3];//
+			if (a==0)
+			{
+				std::cout<<"x:"<<x<<";y:"<<y<<std::endl;
+			}
+		} 
+	} 
+
+}
 
 int main(){
 	
-	//TrainsitionDemo();
-	//VideoEffectDemo();
-	ImageEffectDemo();
+	TrainsitionDemo();
+	//ImageEffectDemo();
+	//GetAlphaRect();
 	system("pause");
 	return 0;
 }

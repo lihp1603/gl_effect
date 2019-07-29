@@ -36,7 +36,7 @@ public:
 	//渲染
 	void Render(MediaFrameInfo_S *mainFrame,bool update =true);
 	//根据effect文件名来加载shader内容
-	int32_t LoadShader(const char* v_shader_source,const char* f_shader_source,const char* effectPath=NULL);
+	int32_t LoadShader(const char* v_shader_source,const char* f_shader_source,const char* f_effect_source_default,const char* effectPath=NULL);
 	//获取shader上下文
 	Shader* GetShader();
 	//获取时间

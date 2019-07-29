@@ -292,7 +292,7 @@ int32_t CRender::SetupGL( uint32_t window_width,uint32_t window_height,uint32_t 
 		return -1;
 	}
 	ConfigGlobalState();
-	if (LoadShader(v_shader_template_default,f_shader_template_default,effectPath)<0)
+	if (LoadShader(v_shader_template_default,f_shader_template_default,f_default_effect_source,effectPath)<0)
 	{
 		return -1;
 	}
@@ -303,7 +303,7 @@ int32_t CRender::SetupGL( uint32_t window_width,uint32_t window_height,uint32_t 
 	return 0;
 }
 
-int32_t CRender::LoadShader(const char* v_shader_source,const char* f_shader_source,const char* effectPath )
+int32_t CRender::LoadShader(const char* v_shader_source,const char* f_shader_source,const char* f_effect_source_default,const char* effectPath )
 {
 	std::string strFragmentSource(f_shader_source);
 	std::string strEffectSource;
@@ -313,7 +313,12 @@ int32_t CRender::LoadShader(const char* v_shader_source,const char* f_shader_sou
 	}
 	if (strEffectSource.empty())
 	{
-		strEffectSource.append(f_default_effect_source);
+		if(f_effect_source_default){
+			strEffectSource.append(f_effect_source_default);
+		}else{
+			std::cout<<"the effect shader source is empty.\n"<<std::endl;
+			return -1;
+		}
 	}
 	//strFragmentSource.append(strTransSource);
 	strFragmentSource.replace(strFragmentSource.find("%s"),2,strEffectSource.c_str(),strEffectSource.length());

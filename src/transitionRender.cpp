@@ -170,7 +170,7 @@ int32_t CRenderTransition::SetupGL( uint32_t window_width,uint32_t window_height
 		return -1;
 	}
 	ConfigGlobalState();
-	if (LoadShader(v_shader_template_transition,f_shader_template_transition,shaderPath)<0)
+	if (LoadShader(v_shader_template_transition,f_shader_template_transition,f_default_transition_source,shaderPath)<0)
 	{
 		return -1;
 	}

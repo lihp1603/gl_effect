@@ -1,3 +1,9 @@
+*.opensdf
+ipch/
+gl_effect/Debug/
+*.pdb
+*.ilk
+
 # Prerequisites
 *.d
 
