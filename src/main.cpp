@@ -93,7 +93,7 @@ int32_t TrainsitionDemo(){
 		BackupFrame(mainFrame,mainBkFrame);
 		BackupFrame(secondFrame,secondBkFrame);
 		/*const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\GlitchDisplace.glsl";*/
-		const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\angular.glsl";
+		const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\circle.glsl";
 		if (pRenderObj->SetupGL(mainBkFrame.nWidth/4,mainBkFrame.nHeight/4,mainBkFrame.nWidth,mainBkFrame.nHeight,pTransitionPath)<0)
 		{
 			std::cout<<"setup GL failed"<<std::endl;
