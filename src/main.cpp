@@ -37,6 +37,11 @@ int32_t BackupFrame(MediaFrameInfo_S &srcFrame,MediaFrameInfo_S &bkFrame){
 		bkFrame.ePixFmt=srcFrame.ePixFmt;
 		bkFrame.fFps=srcFrame.fFps;
 		bkFrame.lPts=srcFrame.lPts;
+		bkFrame.dwFrameTime=srcFrame.dwFrameTime;
+		bkFrame.eMediaType=srcFrame.eMediaType;
+		bkFrame.eSampleFmt=srcFrame.eSampleFmt;
+		bkFrame.lChanels=srcFrame.lChanels;
+		bkFrame.nSampleRate=srcFrame.nSampleRate;
 		return 0;
 	}
 	return -1;
@@ -93,7 +98,7 @@ int32_t TrainsitionDemo(){
 		BackupFrame(mainFrame,mainBkFrame);
 		BackupFrame(secondFrame,secondBkFrame);
 		/*const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\GlitchDisplace.glsl";*/
-		const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\circle.glsl";
+		const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\circleopen.glsl";
 		if (pRenderObj->SetupGL(mainBkFrame.nWidth/4,mainBkFrame.nHeight/4,mainBkFrame.nWidth,mainBkFrame.nHeight,pTransitionPath)<0)
 		{
 			std::cout<<"setup GL failed"<<std::endl;
@@ -235,9 +240,9 @@ int32_t ImageEffectDemo(){
 			return -1;
 		}
 		//const char* pEffectPath = NULL;
-		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
+		const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
 		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\image_alpha.glsl";
-		const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\brightness.glsl";
+		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\brightness.glsl";
 
 		if (pRenderObj->SetupGL(mainFrame.nWidth/4,mainFrame.nHeight/4,mainFrame.nWidth,mainFrame.nHeight,pEffectPath)<0)
 		{
@@ -248,7 +253,7 @@ int32_t ImageEffectDemo(){
 		pRenderObj->CreateTexture(mainFrame.nWidth,mainFrame.nHeight);
 
 		pRenderObj->GetShader()->setVec2("resolution",mainFrame.nWidth/4,mainFrame.nHeight/4);
-		pRenderObj->GetShader()->setFloat("brightness",0);
+		//pRenderObj->GetShader()->setFloat("brightness",0);
 	}
 	Sleep(5*1000);
 	int32_t main_ret=0;

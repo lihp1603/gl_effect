@@ -23,16 +23,18 @@ extern "C" {
 
 class CDecoder
 {
-
 public:
     CDecoder();
     ~CDecoder();
     //打开媒体文件
     int OpenFile(const char* fileUrl);
     //获取一帧解码后的数据
-    int GetFrame(AVFrame *oframe);
+	//streamIndex:0-video,1-audio;
+    int GetFrame(AVFrame *oframe,int& streamIndex);
     //获取视频帧率
     float GetVideoFps();
+	//获取时间调整
+	long GetAVTimeBase();
 private:
     //读取一个pkt数据
     int ReadPacket(AVPacket *pkt);
@@ -45,6 +47,7 @@ private:
     int m_nAudioStream;
     float m_fVideoFps;
     AVStream *m_pVideoSt;
+	AVStream *m_pAudioSt;
     AVCodecContext *m_pVDecCtx;
     AVCodecContext *m_pADecCtx;
     AVFrame *m_pDecFrame;

@@ -51,6 +51,7 @@ private:
     COSMutex            m_cMutex;
     AVFrame *m_pDecFrame;
     AVConvertInfo_S *m_pCvtFrame;
+	AVConvertInfo_S *m_pCatFrame;
     uint64_t m_lFrameSeq;
 };
 

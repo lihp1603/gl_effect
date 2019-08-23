@@ -1,7 +1,9 @@
 // author: gre
 // License: MIT
-uniform float smoothness; // = 0.3
-uniform bool opening; // = true
+//
+uniform float smoothness ;//= 0.3;
+//决定圆的过渡效果方式是散开还是收回去的
+uniform bool opening ;//= true;
 
 const vec2 center = vec2(0.5, 0.5);
 const float SQRT_2 = 1.414213562373;

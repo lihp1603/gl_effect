@@ -22,12 +22,26 @@ extern "C" {
 }
 #endif
 
+
+typedef struct __tagAudioParam_S {
+	int32_t nFreq;//频率
+	int32_t nChannels;//通道数
+	int64_t nChannelLayout;//布局声道数
+	enum AVSampleFormat nASFmt;//格式
+	int32_t nFrameSize;//帧数据大小
+	int32_t nBytesPerSec;//
+	int32_t nNbSamples;//
+} AudioParam_S;
+
 typedef struct tagAVConvertInfo_S{
+	uint8_t *pData[4];
+	int32_t  nLineSize[4];
+	//video
     int32_t nWidth;
     int32_t nHeight;
     int32_t nFormat;
-    uint8_t *pData[4];
-    int32_t  nLineSize[4];
+	//audio
+	AudioParam_S struAudioParam;
 }AVConvertInfo_S;
 
 class CConverter
@@ -38,7 +52,7 @@ public:
     //对video数据格式进行转化
     int ImgConvert(AVFrame *iFrame,AVConvertInfo_S *oFrame,int wantFlags=SWS_BICUBIC);
     //对音频数据进行转化
-    int AudioConvert(AVFrame *iFrame,AVFrame *oFrame,int wantFmt);
+    int AudioConvert(AVFrame *iFrame,AVConvertInfo_S *oFrame,int wantFmt);
 private:
     struct SwsContext *m_pImgConvertCtx;
     struct SwrContext *m_pAudSwrCtx;

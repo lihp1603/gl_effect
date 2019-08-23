@@ -49,14 +49,17 @@ typedef enum {
 typedef struct tagMediaFrameInfo_S{
     uint8_t *pFrame;//帧数据
     int32_t nFrameSize;//帧数据大小
+	MediaType_E eMediaType;//媒体类型
     PixFormat_E ePixFmt;//帧数据格式
     int32_t nWidth;//图像宽
     int32_t nHeight;//图像高度
     int64_t lPts;//图像的显示时间戳
+	double  dwFrameTime;//帧数据时间
     float fFps;//视频帧率
     int64_t lSeq;//序列号
     int32_t nSampleRate;//采样率
     uint64_t lChanels;//通道数
+	AudioSampleFmt_E eSampleFmt;//采样格式
     void *pRes;
     int32_t nResSize;
 }MediaFrameInfo_S;

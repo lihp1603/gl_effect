@@ -238,51 +238,100 @@ int CContex::GetFrame(MediaFrameInfo_S *pFrame)
         COSMutexLocker Locker(&m_cMutex);
         //先将上次的数据内存进行释放
         av_frame_unref(m_pDecFrame);
-        if(m_pDecoder&&m_pDecoder->GetFrame(m_pDecFrame)<=0){
+		int streamType=-1;
+        if(m_pDecoder&&m_pDecoder->GetFrame(m_pDecFrame,streamType)<=0){
             ret=-1;
             break;
         }
 
         //这里先将要转化的数据参数初始化到oframe中
         int frameSize=0;
-        if(m_pCvtFrame==NULL){
-            AVConvertInfo_S *cvtFrame = (AVConvertInfo_S*)malloc(sizeof(AVConvertInfo_S));
-            if(cvtFrame==NULL){
-                LogTraceE("av alloc convert frame buffer failed.");
-                return -1;
-            }
-            m_pCvtFrame=cvtFrame;
-            m_pCvtFrame->nFormat=AV_PIX_FMT_BGR24;//AV_PIX_FMT_RGB32;
-            m_pCvtFrame->nWidth=m_pDecFrame->width;
-            m_pCvtFrame->nHeight=m_pDecFrame->height;
-            /* buffer is going to be written to rawvideo file, no alignment */
-            if ((frameSize = av_image_alloc(m_pCvtFrame->pData, m_pCvtFrame->nLineSize,
-                                      m_pCvtFrame->nWidth, m_pCvtFrame->nHeight, (enum AVPixelFormat)m_pCvtFrame->nFormat, 1)) < 0) {
-                LogTraceE("Could not allocate destination image\n");
-                free(m_pCvtFrame);
-                m_pCvtFrame=NULL;
-                break;
-            }
-        }
+		if(streamType==MEDIA_TYPE_VIDEO){
+			if(m_pCvtFrame==NULL){
+				AVConvertInfo_S *cvtFrame = (AVConvertInfo_S*)malloc(sizeof(AVConvertInfo_S));
+				if(cvtFrame==NULL){
+					LogTraceE("av alloc convert frame buffer failed.");
+					return -1;
+				}
+				m_pCvtFrame=cvtFrame;
+				m_pCvtFrame->nFormat=AV_PIX_FMT_BGR24;//AV_PIX_FMT_RGB32;
+				m_pCvtFrame->nWidth=m_pDecFrame->width;
+				m_pCvtFrame->nHeight=m_pDecFrame->height;
+				/* buffer is going to be written to rawvideo file, no alignment */
+				if ((frameSize = av_image_alloc(m_pCvtFrame->pData, m_pCvtFrame->nLineSize,
+					m_pCvtFrame->nWidth, m_pCvtFrame->nHeight, (enum AVPixelFormat)m_pCvtFrame->nFormat, 1)) < 0) {
+						LogTraceE("Could not allocate destination image\n");
+						free(m_pCvtFrame);
+						m_pCvtFrame=NULL;
+						break;
+				}
+			}
 
-        m_pCvtFrame->nFormat=AV_PIX_FMT_BGR24;//AV_PIX_FMT_RGB32;
-        m_pCvtFrame->nWidth=m_pDecFrame->width;
-        m_pCvtFrame->nHeight=m_pDecFrame->height;
-        frameSize=av_image_get_buffer_size((enum AVPixelFormat)m_pCvtFrame->nFormat,m_pCvtFrame->nWidth,m_pCvtFrame->nHeight,1);
+			m_pCvtFrame->nFormat=AV_PIX_FMT_BGR24;//AV_PIX_FMT_RGB32;
+			m_pCvtFrame->nWidth=m_pDecFrame->width;
+			m_pCvtFrame->nHeight=m_pDecFrame->height;
+			frameSize=av_image_get_buffer_size((enum AVPixelFormat)m_pCvtFrame->nFormat,m_pCvtFrame->nWidth,m_pCvtFrame->nHeight,1);
+			//转成指定格式的图像数据
+			if(m_pConvert&&m_pConvert->ImgConvert(m_pDecFrame,m_pCvtFrame)<0){
+				ret=-1;
+				break;
+			}
+			//对数据进行拷贝
+			pFrame->eMediaType=MEDIA_TYPE_VIDEO;
+			pFrame->ePixFmt=PF_BGR24;//PF_RGB32;
+			pFrame->lSeq=m_lFrameSeq++;
+			pFrame->nFrameSize=frameSize;
+			pFrame->pFrame=m_pCvtFrame->pData[0];
+			pFrame->nWidth=m_pCvtFrame->nWidth;
+			pFrame->nHeight=m_pCvtFrame->nHeight;
+			pFrame->fFps=m_pDecoder->GetVideoFps();
+			pFrame->lPts=m_pDecFrame->pts;
+			//
+			pFrame->dwFrameTime=(double)m_pDecFrame->pts/m_pDecoder->GetAVTimeBase();
+		}else if(streamType==MEDIA_TYPE_AUDIO){//音频数据
+			if(m_pCatFrame==NULL){
+				AVConvertInfo_S *catFrame = (AVConvertInfo_S*)malloc(sizeof(AVConvertInfo_S));
+				if(catFrame==NULL){
+					LogTraceE("av alloc convert frame buffer failed.");
+					return -1;
+				}
+				memset(catFrame,0,sizeof(AVConvertInfo_S))
+				//这里针对音频数据，我们提供一个指定的格式给上层
+				catFrame->struAudioParam.nASFmt=AV_SAMPLE_FMT_S16;
+				catFrame->struAudioParam.nChannelLayout=av_get_channel_layout_nb_channels(m_pDecFrame->channel_layout);
+				catFrame->struAudioParam.nChannels = m_pDecFrame->channels;
+				catFrame->struAudioParam.nFreq = m_pDecFrame->sample_rate;
+				catFrame->struAudioParam.nBytesPerSec = av_samples_get_buffer_size(NULL, catFrame->struAudioParam.nChannels, catFrame->struAudioParam.nFreq, catFrame->struAudioParam.nASFmt, 1);
+				frameSize= av_samples_get_buffer_size(NULL, catFrame->struAudioParam.nChannels, 1, catFrame->struAudioParam.nASFmt, 1);
+				catFrame->struAudioParam.nFrameSize = frameSize;
+				catFrame->pData[0]=(uint8_t*)malloc(sizeof(uint8_t)*frameSize);
+				if (catFrame->pData[0]==NULL)
+				{
+					LogTraceE("av alloc convert frame data buffer failed.");
+					free(catFrame);
+					catFrame=NULL;
+					break;					
+				}
+				m_pCatFrame=catFrame;
+			}
 
-        if(m_pConvert&&m_pConvert->ImgConvert(m_pDecFrame,m_pCvtFrame)<0){
-            ret=-1;
-            break;
-        }
-        //对数据进行拷贝
-        pFrame->nWidth=m_pCvtFrame->nWidth;
-        pFrame->nHeight=m_pCvtFrame->nHeight;
-        pFrame->ePixFmt=PF_BGR24;//PF_RGB32;
-        pFrame->lPts=m_pDecFrame->pts;
-        pFrame->lSeq=m_lFrameSeq++;
-        pFrame->nFrameSize=frameSize;
-        pFrame->pFrame=m_pCvtFrame->pData[0];
-        pFrame->fFps=m_pDecoder->GetVideoFps();
+			if (m_pCatFrame&&m_pConvert->AudioConvert(m_pDecFrame,m_pCatFrame,0)<0)
+			{
+				ret=-1;
+				break;
+			}
+			//对数据进行拷贝
+			pFrame->eMediaType=MEDIA_TYPE_AUDIO;
+			pFrame->eSampleFmt=SAMPLE_FMT_S16;
+			pFrame->lChanels=m_pCatFrame->struAudioParam.nChannels;
+			pFrame->nSampleRate=m_pCatFrame->struAudioParam.nFreq;
+			pFrame->nFrameSize=m_pCatFrame->struAudioParam.nFrameSize;
+			pFrame->pFrame=m_pCatFrame->pData[0];
+			pFrame->lPts=m_pDecFrame->pts;
+			//调整时间戳
+			pFrame->dwFrameTime=(double)m_pDecFrame->pts/m_pDecoder->GetAVTimeBase();
+		}
+        
     }while(0);
 
     return ret;

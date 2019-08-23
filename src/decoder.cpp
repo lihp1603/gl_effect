@@ -13,6 +13,7 @@ using namespace PublicTool;
 CDecoder::CDecoder()
     :m_pIfmtCtx(NULL)
     ,m_pVideoSt(NULL)
+	,m_pAudioSt(NULL)
     ,m_pVDecCtx(NULL)
     ,m_pADecCtx(NULL)
     ,m_pDecFrame(NULL)
@@ -117,6 +118,7 @@ int CDecoder::OpenFile(const char *fileUrl)
                }else{
                    m_nAudioStream=i;
                    m_pADecCtx=codec_ctx;
+				   m_pAudioSt=stream;
                }
            }
     }
@@ -140,7 +142,7 @@ int CDecoder::OpenFile(const char *fileUrl)
        return ret;
 }
 
-int CDecoder::GetFrame(AVFrame *oFrame)
+int CDecoder::GetFrame(AVFrame *oFrame,int& streamIndex)
 {
     int ret=0;
     AVPacket pkt1, *pkt = &pkt1;
@@ -178,8 +180,11 @@ int CDecoder::GetFrame(AVFrame *oFrame)
                  ret=0;//用于在非视频数据的情况下，能继续读取
                 if(pkt->stream_index==m_nVideoStream){//读到视频数据，这我们送入解码器
                     ret=DecodeFrame(m_pVDecCtx,pkt,oFrame);
-                }else if(pkt->stream_index==m_nAudioStream){                      
-                        //continue;
+					streamIndex=0;
+                }else if(pkt->stream_index==m_nAudioStream){
+					ret=DecodeFrame(m_pADecCtx,pkt,oFrame);
+					streamIndex=1;
+                    //continue;
                 }else{//暂时对于非音视频数据的进行丢弃
                     //continue;
                 }
@@ -235,47 +240,46 @@ int CDecoder::DecodeFrame(AVCodecContext *decCtx,AVPacket *pkt,AVFrame *frame)
         return -1;
     }
     do{
-        if(decCtx&&decCtx->codec_type==AVMEDIA_TYPE_VIDEO){
-            //旧接口已经被废弃掉了
-            //ret = avcodec_decode_video2(decCtx, frame, &got_frame, pkt);
-            //将数据送入解码器
-            if (pkt) {
-                    ret = avcodec_send_packet(decCtx, pkt);
-                    // In particular, we don't expect AVERROR(EAGAIN), because we read all
-                    // decoded frames with avcodec_receive_frame() until done.
-                    if (ret < 0 && ret != AVERROR_EOF)
-                        break;
-            }
-            //从解码器获取解码后的数据
-            ret = avcodec_receive_frame(decCtx, frame);
-            if (ret < 0){
-                if(pkt&&ret == AVERROR(EAGAIN)){//需要再尝试一次
-                    ret=0;
-                }
-                break;
-            }
-            else{
-                got_frame=1;
-				//这个接口在后面的版本中已经被废弃了
-                //frame->pts = av_frame_get_best_effort_timestamp(frame);
-				double pts=frame->pts * av_q2d(m_pVideoSt->time_base)*AV_TIME_BASE;
-				frame->pts=pts;
-            }
-        }else if(decCtx&&decCtx->codec_type==AVMEDIA_TYPE_AUDIO){
-            ret = avcodec_decode_audio4(decCtx, frame, &got_frame, pkt);
-            if (got_frame) {
-//                AVRational tb = (AVRational){1, frame->sample_rate};
-                AVRational tb;
-                tb.num=1;
-                tb.den=frame->sample_rate;
-                if (frame->pts != AV_NOPTS_VALUE)
-                    frame->pts = av_rescale_q(frame->pts, av_codec_get_pkt_timebase(decCtx), tb);
-            }
-        }
-        if(got_frame)
-            ret=got_frame;
+		//从解码器获取解码后的数据
+		ret = avcodec_receive_frame(decCtx, frame);
+		if (ret < 0){
+			if(ret == AVERROR(EAGAIN)){//需要再尝试一次
+				ret=0;
+			}
+		}else{
+			 got_frame=1;
+			 //这里对pts做简单的调整
+			 if(decCtx&&decCtx->codec_type==AVMEDIA_TYPE_VIDEO){                   
+				 frame->pts = frame->best_effort_timestamp;
+				 if(frame->pts!=AV_NOPTS_VALUE){
+					 //这个地方这么做的原因是因为frame的pts是int64类型的，而如果直接通过
+					 //frame->pts * av_q2d(m_pVideoSt->time_base)得到的可能是一个小数，这样的结果是不对的，
+					 //所以需要*GetAVTimeBase(),来得到一个整数
+					 int64_t pts = frame->pts * av_q2d(m_pVideoSt->time_base)*GetAVTimeBase();
+					 frame->pts = pts;
+				 }				 
+			 }else if(decCtx&&decCtx->codec_type==AVMEDIA_TYPE_AUDIO){
+				 AVRational tb;
+				 tb.num=1;
+				 tb.den=frame->sample_rate;
+				 if (frame->pts != AV_NOPTS_VALUE){
+					 /*av_rescale_q(a,b,c):return (a*b/c) 取整*/
+					 frame->pts = av_rescale_q(frame->pts, decCtx->pkt_timebase, tb);
+					 frame->pts = frame->pts*av_q2d(tb)*GetAVTimeBase();
+				 }
+			 }
+		}
+		//将数据送入解码器
+		if (pkt) {
+			ret = avcodec_send_packet(decCtx, pkt);
+			// In particular, we don't expect AVERROR(EAGAIN), because we read all
+			// decoded frames with avcodec_receive_frame() until done.
+			if (ret < 0 && ret != AVERROR_EOF)
+				break;
+		}
     }while(0);
-
+	if(got_frame)
+		ret=got_frame;
     return ret;
 }
 
@@ -291,6 +295,11 @@ float CDecoder::GetVideoFps()
         return m_fVideoFps;
     }
     return 0;
+}
+
+long CDecoder::GetAVTimeBase()
+{
+	return AV_TIME_BASE;
 }
 
 
