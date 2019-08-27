@@ -154,6 +154,7 @@ CContex::CContex()
     ,m_pConvert(NULL)
     ,m_pDecFrame(NULL)
     ,m_pCvtFrame(NULL)
+	,m_pCatFrame(NULL)
     ,m_lFrameSeq(0)
 {
 
@@ -179,6 +180,11 @@ CContex::~CContex()
        free(m_pCvtFrame);
        m_pCvtFrame=NULL;
     }
+	if(m_pCatFrame){
+		av_freep(&m_pCatFrame->pData[0]);
+		free(m_pCatFrame);
+		m_pCatFrame=NULL;
+	}
 }
 
 int CContex::OpenFile(const char *fileUrl)
@@ -295,14 +301,15 @@ int CContex::GetFrame(MediaFrameInfo_S *pFrame)
 					LogTraceE("av alloc convert frame buffer failed.");
 					return -1;
 				}
-				memset(catFrame,0,sizeof(AVConvertInfo_S))
+				memset(catFrame,0,sizeof(AVConvertInfo_S));
 				//这里针对音频数据，我们提供一个指定的格式给上层
 				catFrame->struAudioParam.nASFmt=AV_SAMPLE_FMT_S16;
 				catFrame->struAudioParam.nChannelLayout=av_get_channel_layout_nb_channels(m_pDecFrame->channel_layout);
 				catFrame->struAudioParam.nChannels = m_pDecFrame->channels;
 				catFrame->struAudioParam.nFreq = m_pDecFrame->sample_rate;
+				catFrame->struAudioParam.nNbSamples =m_pDecFrame->nb_samples;
 				catFrame->struAudioParam.nBytesPerSec = av_samples_get_buffer_size(NULL, catFrame->struAudioParam.nChannels, catFrame->struAudioParam.nFreq, catFrame->struAudioParam.nASFmt, 1);
-				frameSize= av_samples_get_buffer_size(NULL, catFrame->struAudioParam.nChannels, 1, catFrame->struAudioParam.nASFmt, 1);
+				frameSize= av_samples_get_buffer_size(NULL, catFrame->struAudioParam.nChannels, catFrame->struAudioParam.nNbSamples, catFrame->struAudioParam.nASFmt, 0);
 				catFrame->struAudioParam.nFrameSize = frameSize;
 				catFrame->pData[0]=(uint8_t*)malloc(sizeof(uint8_t)*frameSize);
 				if (catFrame->pData[0]==NULL)

@@ -47,9 +47,35 @@ int32_t BackupFrame(MediaFrameInfo_S &srcFrame,MediaFrameInfo_S &bkFrame){
 	return -1;
 }
 
+int GetVideoFrameAndBackup(CContex* ctx,MediaFrameInfo_S &destFrame,MediaFrameInfo_S &bkFrame){
+	int ret=-1;
+	if (ctx==NULL)
+	{
+		return ret;
+	}
+	bool getVideoFrame=false;
+	while (!getVideoFrame)
+	{
+		ret=ctx->GetFrame(&destFrame);
+		if (ret<0)
+		{
+			std::cout<<"get frame failed"<<std::endl;
+			return -1;
+		}
+		if (destFrame.eMediaType!=MEDIA_TYPE_VIDEO)
+		{
+			continue;
+		}
+		getVideoFrame=true;
+		break;
+	}
+	return BackupFrame(destFrame,bkFrame);
+}
+
 //转场
 int32_t TrainsitionDemo(){
-	int64_t firstPts=-1;
+	//int64_t firstPts=-1;
+	double firstPts=-1;
 	//transition
 	uint32_t transOffset=1;
 	uint32_t transDuration=1;
@@ -85,18 +111,16 @@ int32_t TrainsitionDemo(){
 
 	if (!init)
 	{
-		if (pMainDecCtx->GetFrame(&mainFrame)<0)
+		if (GetVideoFrameAndBackup(pMainDecCtx,mainFrame,mainBkFrame)<0)
 		{
 			std::cout<<"main get frame failed"<<std::endl;
 			return -1;
 		}
-		if (pSecDecCtx->GetFrame(&secondFrame)<0)
+		if (GetVideoFrameAndBackup(pSecDecCtx,secondFrame,secondBkFrame)<0)
 		{
 			std::cout<<"second get frame failed"<<std::endl;
 			return -1;
 		}
-		BackupFrame(mainFrame,mainBkFrame);
-		BackupFrame(secondFrame,secondBkFrame);
 		/*const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\GlitchDisplace.glsl";*/
 		const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\circleopen.glsl";
 		if (pRenderObj->SetupGL(mainBkFrame.nWidth/4,mainBkFrame.nHeight/4,mainBkFrame.nWidth,mainBkFrame.nHeight,pTransitionPath)<0)
@@ -110,7 +134,8 @@ int32_t TrainsitionDemo(){
 
 	if (firstPts==-1)
 	{
-		firstPts=mainBkFrame.lPts;
+		//firstPts=mainBkFrame.lPts;
+		firstPts=mainBkFrame.dwFrameTime;
 	}
 
 	int32_t second_ret=0;
@@ -118,28 +143,31 @@ int32_t TrainsitionDemo(){
 	while (second_ret==0)
 	{
 		//float fps_time=1.0/mainBkFrame.fFps;
-		const float ts = ((float)(mainBkFrame.lPts - firstPts) / FRAME_TIME_BASE) - transOffset;
+		//const float ts = ((float)(mainBkFrame.lPts - firstPts) / FRAME_TIME_BASE) - transOffset;
+		const float ts = (float)(mainBkFrame.dwFrameTime - firstPts) - transOffset;
 		//progress的计算值:ts<0,progress=0;ts>1,progress=1;0<ts<1,progress=ts;
 		const float progress = FFMAX(0.0f, FFMIN(1.0f, ts / transDuration));
-		std::cout<<"main pts:"<<mainBkFrame.lPts<<"; firs pts:"<<firstPts<<"; ts:"<<ts<<"; progress:"<<progress<<std::endl;
+		std::cout<<"main pts:"<<mainBkFrame.dwFrameTime<<"; firs pts:"<<firstPts<<"; ts:"<<ts<<"; progress:"<<progress<<std::endl;
 
 		pRenderObj->Render(&mainBkFrame,&secondBkFrame,progress);
 		Sleep(1);
 		if (main_ret>=0)
 		{
-			main_ret=pMainDecCtx->GetFrame(&mainFrame);
+			main_ret=GetVideoFrameAndBackup(pMainDecCtx,mainFrame,mainBkFrame);
+			/*main_ret=pMainDecCtx->GetFrame(&mainFrame);
 			if (main_ret>=0)
 			{
 				BackupFrame(mainFrame,mainBkFrame);
-			}
+			}*/
 		}
 		if (progress>=0)
 		{
-			second_ret=pSecDecCtx->GetFrame(&secondFrame);
+			second_ret = GetVideoFrameAndBackup(pSecDecCtx,secondFrame,secondBkFrame);
+			/*second_ret=pSecDecCtx->GetFrame(&secondFrame);
 			if (second_ret>=0)
 			{
 				BackupFrame(secondFrame,secondBkFrame);
-			}
+			}*/
 		}
 	}
 	return 0;

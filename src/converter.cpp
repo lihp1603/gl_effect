@@ -46,8 +46,18 @@ int CConverter::AudioConvert(AVFrame *iFrame, AVConvertInfo_S *oFrame, int wantF
 {
 	int data_size, resampled_data_size;
 	int64_t dec_channel_layout;
-	av_unused double audio_clock0;
 	int wanted_nb_samples=oFrame->struAudioParam.nNbSamples;
+	if (wanted_nb_samples<=0)
+	{
+		wanted_nb_samples=iFrame->nb_samples;
+	}
+	if (iFrame==NULL||iFrame->data==NULL
+		||oFrame==NULL||oFrame->pData[0]==NULL)
+	{
+		 LogTraceE("the the audio convert frame param is invalid");
+		 return -1;
+	}
+	
 	//获取帧数据大小
 	data_size = av_samples_get_buffer_size(NULL, iFrame->channels,
 		iFrame->nb_samples,
@@ -59,7 +69,7 @@ int CConverter::AudioConvert(AVFrame *iFrame, AVConvertInfo_S *oFrame, int wantF
 	if(iFrame->format        != oFrame->struAudioParam.nASFmt            ||
 		dec_channel_layout       != oFrame->struAudioParam.nChannelLayout ||
 		iFrame->sample_rate   != oFrame->struAudioParam.nFreq ||  
-		(iFrame->nb_samples!=wanted_nb_samples&&!m_pAudSwrCtx){
+		(iFrame->nb_samples!=wanted_nb_samples&&!m_pAudSwrCtx)){
 		swr_free(&m_pAudSwrCtx);
 		m_pAudSwrCtx = swr_alloc_set_opts(NULL,
 			oFrame->struAudioParam.nChannelLayout, oFrame->struAudioParam.nASFmt, oFrame->struAudioParam.nFreq,
@@ -67,7 +77,7 @@ int CConverter::AudioConvert(AVFrame *iFrame, AVConvertInfo_S *oFrame, int wantF
 			0, NULL);
 		if (!m_pAudSwrCtx || swr_init(m_pAudSwrCtx) < 0) {
 			LogTraceE("Cannot create sample rate converter for conversion of %d Hz %s %d channels to %d Hz %s %d channels!",
-				iFrame->sample_rate, av_get_sample_fmt_name(iFrame->format), iFrame->channels,
+				iFrame->sample_rate, av_get_sample_fmt_name((enum AVSampleFormat)iFrame->format), iFrame->channels,
 				oFrame->struAudioParam.nFreq, av_get_sample_fmt_name(oFrame->struAudioParam.nASFmt), oFrame->struAudioParam.nChannels);
 			swr_free(&m_pAudSwrCtx);
 			return -1;
