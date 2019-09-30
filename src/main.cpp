@@ -199,12 +199,11 @@ int32_t VideoEffectDemo(){
 	float time=pRenderObj->GetTime();
 	if (!init)
 	{
-		if (pMainDecCtx->GetFrame(&mainFrame)<0)
+		if (GetVideoFrameAndBackup(pMainDecCtx,mainFrame,mainBkFrame)<0)
 		{
 			std::cout<<"main get frame failed"<<std::endl;
 			return -1;
 		}
-		BackupFrame(mainFrame,mainBkFrame);
 		const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
 		if (pRenderObj->SetupGL(mainBkFrame.nWidth/4,mainBkFrame.nHeight/4,mainBkFrame.nWidth,mainBkFrame.nHeight,pEffectPath)<0)
 		{
@@ -237,10 +236,10 @@ int32_t VideoEffectDemo(){
 
 		pRenderObj->Render(&mainBkFrame);
 		Sleep(100);
-		main_ret=pMainDecCtx->GetFrame(&mainFrame);
-		if (main_ret>=0)
+		if (GetVideoFrameAndBackup(pMainDecCtx,mainFrame,mainBkFrame)<0)
 		{
-			BackupFrame(mainFrame,mainBkFrame);
+			std::cout<<"main get frame failed"<<std::endl;
+			return -1;
 		}
 	}
 	return 0;
@@ -330,7 +329,8 @@ void GetAlphaRect(){
 
 int main(){
 	
-	TrainsitionDemo();
+	//TrainsitionDemo();
+	VideoEffectDemo();
 	//ImageEffectDemo();
 	//GetAlphaRect();
 	system("pause");
