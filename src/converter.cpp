@@ -33,8 +33,8 @@ int CConverter::ImgConvert(AVFrame *iFrame, AVConvertInfo_S *oFrame,int wantFlag
         sws_scale(m_pImgConvertCtx,
                  (const uint8_t * const *)iFrame->data, iFrame->linesize,
                  0, iFrame->height, oFrame->pData, oFrame->nLineSize);
-        sws_freeContext(m_pImgConvertCtx);
-        m_pImgConvertCtx=NULL;
+		sws_freeContext(m_pImgConvertCtx);
+		m_pImgConvertCtx=NULL;
     }else{
         LogTraceE("Cannot initialize the image conversion context");
         ret=-1;

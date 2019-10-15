@@ -266,7 +266,8 @@ void CRender::Render(MediaFrameInfo_S *mainFrame,bool update /*=true*/)
 
 	glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	//¸üÐÂ
+	UpdateVAO();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_uMainTexture);
 	if (update)
@@ -342,6 +343,21 @@ void CRender::ConfigGlobalState()
 {
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+}
+
+void CRender::UpdateVAO()
+{
+	 glBindVertexArray(m_uVAO);
+}
+
+int32_t CRender::getVideoWidth()
+{
+	return m_uVideoWidth;
+}
+
+int32_t CRender::getVideoHeight()
+{
+	return m_uVideoHeight;
 }
 
 

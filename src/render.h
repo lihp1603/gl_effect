@@ -20,7 +20,7 @@
 class CRender{
 public:
 	CRender();
-	~CRender();
+	virtual ~CRender();
 	//setup
 	virtual int32_t SetupGL(uint32_t window_width,uint32_t window_height,uint32_t video_width,uint32_t video_height,const char* shaderPath);
 	//启动opengl,包含创建窗口
@@ -28,13 +28,13 @@ public:
 	//创建用的shader
 	int32_t CreateShader( const char* v_shader_source,const char* f_shader_source );
 	//创建顶点用的VAO,VBO
-	void CreateVAO(const float vertexPostion[]=NULL,int32_t arrySize=0);
+	virtual void CreateVAO(const float vertexPostion[]=NULL,int32_t arrySize=0);
 	//创建纹理
 	uint32_t CreateTexture(uint32_t width,uint32_t height,PixFormat_E ePixFmt=PF_RGB24);
 	//初始化uniforms变量的值
 	virtual void InitUniforms();
 	//渲染
-	void Render(MediaFrameInfo_S *mainFrame,bool update =true);
+	virtual void Render(MediaFrameInfo_S *mainFrame,bool update =true);
 	//根据effect文件名来加载shader内容
 	int32_t LoadShader(const char* v_shader_source,const char* f_shader_source,const char* f_effect_source_default,const char* effectPath=NULL);
 	//获取shader上下文
@@ -43,6 +43,11 @@ public:
 	float GetTime();
 	//配置全局的opengl state,例如blend
 	virtual void ConfigGlobalState();
+protected:
+	//更新顶点数据相关信息
+	virtual void UpdateVAO();
+	int32_t getVideoWidth();
+	int32_t getVideoHeight();
 protected:
 	GLFWwindow* m_pWindow;
 	Shader* m_pShaderCtx;

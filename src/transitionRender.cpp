@@ -192,5 +192,6 @@ CRenderTransition::CRenderTransition()
 
 CRenderTransition::~CRenderTransition()
 {
-	
+	glDeleteTextures(1, &m_uFromTexture);
+	glDeleteTextures(1, &m_uToTexture);
 }

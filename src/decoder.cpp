@@ -166,7 +166,7 @@ int CDecoder::GetFrame(AVFrame *oFrame,int& streamIndex)
             //直接取解码器中的缓存数据
             //这里暂时取视频数据
             ret=DecodeFrame(m_pVDecCtx,NULL,oFrame);
-            if(ret<0){
+            if(ret<=0){
                 LogTraceI("no more decode frame");
                 break;
             }

@@ -14,7 +14,7 @@
 class CRenderTransition:public CRender{
 public:
 	CRenderTransition();
-	~CRenderTransition();
+	virtual ~CRenderTransition();
 	//setup
 	int32_t SetupGL(uint32_t window_width,uint32_t window_height,uint32_t video_width,uint32_t video_height,const char* shaderPath);
 
