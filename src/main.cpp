@@ -73,7 +73,7 @@ int GetVideoFrameAndBackup(CContex* ctx,MediaFrameInfo_S &destFrame,MediaFrameIn
 }
 
 //转场
-int32_t TrainsitionDemo(){
+int32_t TrainsitionDemo(const char* pEffectPath){
 	//int64_t firstPts=-1;
 	double firstPts=-1;
 	//transition
@@ -85,13 +85,15 @@ int32_t TrainsitionDemo(){
 	CContex* pSecDecCtx= new CContex();
 	assert(pSecDecCtx);
 
-	const char* main_file="F:\\test_file\\fengjing\\03.mp4";
+	//const char* main_file="F:\\test_file\\fengjing\\03.mp4";
+	const char* main_file="..\\material\\1.mp4";
 	if (pMainDecCtx->OpenFile(main_file)<0)
 	{
 		std::cout<<"open main file failed:"<<main_file<<std::endl;
 		return -1;
 	}
-	const char* second_file="F:\\test_file\\fengjing\\t4.mp4";
+	/*const char* second_file="F:\\test_file\\fengjing\\t4.mp4";*/
+	const char* second_file="..\\material\\2.mp4";
 	if (pSecDecCtx->OpenFile(second_file)<0)
 	{
 		std::cout<<"open second file failed:"<<second_file<<std::endl;
@@ -121,9 +123,9 @@ int32_t TrainsitionDemo(){
 			std::cout<<"second get frame failed"<<std::endl;
 			return -1;
 		}
-		/*const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\GlitchDisplace.glsl";*/
-		const char* pTransitionPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\circleopen.glsl";
-		if (pRenderObj->SetupGL(mainBkFrame.nWidth/4,mainBkFrame.nHeight/4,mainBkFrame.nWidth,mainBkFrame.nHeight,pTransitionPath)<0)
+		/*const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\GlitchDisplace.glsl";*/
+		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\transitions\\circleopen.glsl";
+		if (pRenderObj->SetupGL(mainBkFrame.nWidth/4,mainBkFrame.nHeight/4,mainBkFrame.nWidth,mainBkFrame.nHeight,pEffectPath)<0)
 		{
 			std::cout<<"setup GL failed"<<std::endl;
 			return -1;
@@ -175,7 +177,7 @@ int32_t TrainsitionDemo(){
 
 
 //单个effect
-int32_t VideoEffectDemo(){
+int32_t VideoEffectDemo(const char* pEffectPath){
 	int64_t firstPts=-1;
 	//transition
 	uint32_t transOffset=1;
@@ -183,7 +185,8 @@ int32_t VideoEffectDemo(){
 	CContex* pMainDecCtx= new CContex();
 	assert(pMainDecCtx);
 
-	const char* main_file="F:\\test_file\\fengjing\\03.mp4";
+	//const char* main_file="F:\\test_file\\fengjing\\03.mp4";
+	const char* main_file="..\\material\\1.mp4";
 	if (pMainDecCtx->OpenFile(main_file)<0)
 	{
 		std::cout<<"open main file failed:"<<main_file<<std::endl;
@@ -204,7 +207,7 @@ int32_t VideoEffectDemo(){
 			std::cout<<"main get frame failed"<<std::endl;
 			return -1;
 		}
-		const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
+		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
 		if (pRenderObj->SetupGL(mainBkFrame.nWidth/4,mainBkFrame.nHeight/4,mainBkFrame.nWidth,mainBkFrame.nHeight,pEffectPath)<0)
 		{
 			std::cout<<"setup GL failed"<<std::endl;
@@ -246,10 +249,11 @@ int32_t VideoEffectDemo(){
 }
 
 //图片
-int32_t ImageEffectDemo(){
+int32_t ImageEffectDemo(const char* pEffectPath){
 	int64_t firstPts=-1;
 
-	const char* main_file="F:\\test_file\\text_template\\213123213_00088\\1.png";
+	//const char* main_file="F:\\test_file\\text_template\\213123213_00088\\1.png";
+	const char* main_file="..\\material\\01.png";
 	ImageHelper* pMainImage= new ImageHelper(main_file,PF_RGB32);
 	assert(pMainImage);
 
@@ -267,11 +271,12 @@ int32_t ImageEffectDemo(){
 			return -1;
 		}
 		//const char* pEffectPath = NULL;
-		const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
+		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\circle.glsl";
 		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\image_alpha.glsl";
 		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\brightness.glsl";
+		//const char* pEffectPath = "F:\\Media\\OpenGL\\dev\\gl_effect\\src\\effect\\split_screen.frag";
 
-		if (pRenderObj->SetupGL(mainFrame.nWidth/4,mainFrame.nHeight/4,mainFrame.nWidth,mainFrame.nHeight,pEffectPath)<0)
+		if (pRenderObj->SetupGL(mainFrame.nWidth,mainFrame.nHeight,mainFrame.nWidth,mainFrame.nHeight,pEffectPath)<0)
 		{
 			std::cout<<"setup GL failed"<<std::endl;
 			return -1;
@@ -279,10 +284,10 @@ int32_t ImageEffectDemo(){
 		//创建纹理对象
 		pRenderObj->CreateTexture(mainFrame.nWidth,mainFrame.nHeight);
 
-		pRenderObj->GetShader()->setVec2("resolution",mainFrame.nWidth/4,mainFrame.nHeight/4);
+		pRenderObj->GetShader()->setVec2("resolution",mainFrame.nWidth,mainFrame.nHeight);
 		//pRenderObj->GetShader()->setFloat("brightness",0);
 	}
-	Sleep(5*1000);
+	Sleep(1000);
 	int32_t main_ret=0;
 	float brightness_factor=-1;
 	while (main_ret>=0)
@@ -294,7 +299,7 @@ int32_t ImageEffectDemo(){
 		pRenderObj->GetShader()->setFloat("brightness",brightness_factor);
 
 		pRenderObj->Render(&mainFrame);
-		Sleep(1*1000);
+		Sleep(500);
 		main_ret=pMainImage->GetFrame(&mainFrame);
 	}
 	return 0;
@@ -327,11 +332,60 @@ void GetAlphaRect(){
 
 }
 
-int main(){
+
+
+
+void showUsge(){
+	std::string strHelp("\
+-t  video transition effect demo\n\
+-e  image effect demo\n\
+-v  video effect demo\n\
+-xx fragment shader file\n\
+\n");
+	std::cout<<strHelp<<std::endl;
+}
+
+int parseOptions(const char *opt){
+	int demoIndex = -1;
+	if(strcmp(opt,"-t")==0){
+		demoIndex = 0;
+	}else if (strcmp(opt,"-e")==0){
+		demoIndex = 1;
+	}else if (strcmp(opt,"-v")==0){
+		demoIndex = 2;
+	}
+	return demoIndex;
+}
+
+
+int main(int argc, char **argv){
+	int demoIndex=-1;
+	const char *opt=NULL;
+	int optIndex=1;
+	const char *fragPath=NULL;
+	if(argc!=3){
+		showUsge();
+		return 0;
+	}
+	opt=argv[optIndex++];
+	demoIndex = parseOptions(opt);
+	opt = argv[optIndex++];
+	fragPath= opt;
+
+	switch(demoIndex){
+	case 0:
+		TrainsitionDemo(fragPath);
+		break;
+	case 1:
+		ImageEffectDemo(fragPath);
+		break;
+	case 2:
+		VideoEffectDemo(fragPath);
+		break;
+	default:
+		showUsge();
+	}
 	
-	//TrainsitionDemo();
-	VideoEffectDemo();
-	//ImageEffectDemo();
 	//GetAlphaRect();
 	system("pause");
 	return 0;
